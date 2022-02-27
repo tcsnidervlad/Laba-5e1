@@ -1,0 +1,3 @@
+C:/Program666/cmake-build-debug/CMakeFiles/Program666.dir
+C:/Program666/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Program666/cmake-build-debug/CMakeFiles/rebuild_cache.dir
