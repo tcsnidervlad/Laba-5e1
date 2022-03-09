@@ -2,9 +2,18 @@
 #include <ctype.h>
 #include <memory.h>
 #include <stdbool.h>
+# include <assert.h>
 
-# define ASSERT_STRING(expected, got) assertString(expected,got, \
- __FILE__ , __FUNCTION__ , __LINE__ )
+# define MAX_STRING_SIZE 100
+# define MAX_N_WORDS_IN_STRING 100
+# define MAX_WORD_SIZE 20
+
+
+int getDigit(char x) {
+    return (x > '0') && (x < '9');
+}
+
+char _stringBuffer[MAX_STRING_SIZE + 1];
 
 
 typedef struct WordDescriptor {
@@ -12,7 +21,7 @@ typedef struct WordDescriptor {
     char *end; // позиция первого символа, после последнего символа слова
 } WordDescriptor;
 
-size_t strlen_(const char *begin) {
+size_t strlen_(char *begin) {
     char *end = begin;
     while (*end != '\0') {
         end++;
@@ -89,36 +98,37 @@ int strcmp(const char *lhs, const char *rhs) {
 
 char *copy(const char *beginSource, const char *endSource,
            char *beginDestination) {
-    char *s[strlen_(beginSource)];
-    char *destination = memcpy(&beginDestination, &s, endSource - beginSource);
-    return destination;
+    while (beginSource != endSource) {
+        memcpy(beginDestination, beginSource, sizeof(char));
+        beginDestination++;
+        beginSource++;
+    }
+    return beginDestination;
+
 }
 
-char *copyIf(char *beginSource, const char *endSource,
+char *copyIf(const char *beginSource, const char *endSource,
              char *beginDestination, int (*f)(int)) {
-    char *s[strlen_(beginSource)];
-    char *s1[strlen_(beginDestination)];
-    for (char i = *beginSource; i < *endSource; i++) {
-        if (f) {
-            s1[i] = s[i];
+    while (beginSource != endSource)
+        if (f(*beginSource)) {
+            memcpy(beginDestination, beginSource, sizeof(char));
             beginDestination++;
-        }
-    }
+            beginSource++;
+        } else
+            beginSource++;
     return beginDestination;
 }
 
-char *copyIfReverse(char *rbeginSource, const char *rendSource,
+char *copyIfReverse(const char *rbeginSource, const char *rendSource,
                     char *beginDestination, int (*f)(int)) {
-    char *s[strlen_(rbeginSource)];
-    char *s1[strlen_(beginDestination)];
-    char j = *beginDestination;
-    for (char i = *rendSource; i > *rbeginSource; i--) {
-        if (f) {
-            s1[j] = s[i];
+    while (rbeginSource != rendSource)
+        if (f(*rbeginSource)) {
+            memcpy(beginDestination, rbeginSource, sizeof(char));
             beginDestination++;
-        }
-        j++;
-    }
+            rbeginSource--;
+        } else
+            rbeginSource--;
+
     return beginDestination;
 }
 
@@ -144,29 +154,90 @@ void assertString(const char *expected, char *got,
 
 
 void removeAdjacentEqualLetters(char *s) {
-    for (int i = 0; i < strlen_(0); i++) {
-        for (int j = i + 1; j < strlen_(0); j++) {
-            if (s[i] == s[j])
-                RemoveValueAt(s, strlen_(0), j);
+    char *endBuffer = copy(s, s + strlen_(s), _stringBuffer);
+    char *beginBuffer = _stringBuffer;
+    while (beginBuffer < endBuffer) {
+        if (*beginBuffer == *(beginBuffer + 1)) {
+            while (*beginBuffer == *(beginBuffer + 1)) {
+                beginBuffer++;
+            }
+        } else {
+            *s++ = *beginBuffer;
+            beginBuffer++;
         }
     }
+    *s = '\0';
 }
+
 
 int getWord(char *beginSearch, WordDescriptor *word) {
     word->begin = findNonSpace(beginSearch);
-    if (*word ->begin == '\0')
+    if (*word->begin == '\0')
         return 0;
     word->end = findSpace(word->begin);
     return 1;
 }
 
 
-bool getWordReverse(char *rbegin, char *rend, WordDescriptor *word) {
+void digitToStart(WordDescriptor word) {
+    char *endStringBuffer = copy(word.begin, word.end,
+                                 _stringBuffer);
+    char *recPosition = copyIfReverse(endStringBuffer - 1,
+                                      _stringBuffer - 1,
 
+                                      word.begin, isdigit);
+    copyIf(_stringBuffer, endStringBuffer, recPosition, isalpha);
 }
 
 
+bool getWordReverse(char *rbegin, char *rend, WordDescriptor *word) {
+    word->begin = findNonSpaceReverse(rbegin, rend);
+    if (*word->begin == '\0')
+        return 0;
+    word->end = findSpaceReverse(rbegin, rend);
+
+}
+
+void outPutArray(char *s) {
+    for (int i = 0; i < MAX_STRING_SIZE; i++) {
+        printf("%c", s[i]);
+    }
+}
+
+void replaceDigitsWithSpaces(char *str) {
+    char *endBuffer = copy(str, str + strlen_(str), _stringBuffer);
+    char *beginBuffer = _stringBuffer;
+    while (beginBuffer < endBuffer) {
+        if (isdigit(*beginBuffer)) {
+            int nSpaces = *beginBuffer - '0';
+            for (int i = 0; i < nSpaces; i++)
+                *str++ = ' ';
+        } else
+            *(str++) = *beginBuffer;
+        beginBuffer++;
+    }
+    *str = '\0';
+}
+
+void test_digitToStartTransform_oneWord() {
+    char s[] = "Hi123";
+    replaceDigitsWithSpaces(s);
+    char s1[] = "Hi      ";
+    assert(strcmp(s, s1) == 0);
+}
+
+void test_removeAdjacentEqualLetters() {
+    char s[] = "Hiii123";
+    removeAdjacentEqualLetters(s);
+    char s1[] = "Hi123";
+    assert(strcmp(s, s1) == 0);
+}
+
+
+
+
 int main() {
-    printf("Hello, World!\n");
+    test_digitToStartTransform_oneWord();
+    test_removeAdjacentEqualLetters();
     return 0;
 }
