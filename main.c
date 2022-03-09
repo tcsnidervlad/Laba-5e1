@@ -9,6 +9,13 @@
 # define MAX_WORD_SIZE 20
 
 
+char *getEndOfString(char *str) {
+    while (*str)
+        str++;
+
+    return str;
+}
+
 int getDigit(char x) {
     return (x > '0') && (x < '9');
 }
@@ -233,11 +240,91 @@ void test_removeAdjacentEqualLetters() {
     assert(strcmp(s, s1) == 0);
 }
 
+int WordsEqual(WordDescriptor w1,
+               WordDescriptor w2) {
+    return strcmp(w1.begin, w2.begin) == 0;
+}
+
+void replace(char *source, char *w1, char *w2) {
+    size_t w1Size = strlen_(w1);
+    size_t w2Size = strlen_(w2);
+    WordDescriptor word1 = {w1, w1 + w1Size};
+    WordDescriptor word2 = {w2, w2 + w2Size};
+
+    char *readPtr;
+    char *recPtr;
+    if (w1Size >= w2Size) {
+        readPtr = source;
+        recPtr = source;
+    } else {
+        copy(source, getEndOfString(source), _stringBuffer);
+        readPtr = _stringBuffer;
+        recPtr = source;
+    }
+    WordDescriptor currentWord;
+    while (getWord(readPtr, &currentWord)) {
+        if (WordsEqual(word1, currentWord)) {
+            recPtr = copy(word2.begin, word2.end, recPtr);
+        } else
+            recPtr = copy(currentWord.begin, currentWord.end, recPtr);
+        *recPtr++ = ' ';
+        readPtr = currentWord.end;
+    }
+
+    recPtr -= (recPtr != source);
+    *recPtr = '\0';
+}
 
 
+void getMergeString(char *s1, char *s2, char *res) {
+    WordDescriptor word1, word2;
+    bool isW1Found, isW2Found;
+    char *beginSearch1 = s1, *beginSearch2 = s2;
+    while ((isW1Found = getWord(beginSearch1, &word1)),
+            (isW2Found = getWord(beginSearch2, &word2)),
+            isW1Found || isW2Found) {
+        if (isW1Found) {
+            res = copy(word1.begin, word1.end, res);
+            *res++ = ' ';
+            beginSearch1 = word1.end;
+        }
+        if (isW2Found) {
+            res = copy(word2.begin, word2.end, res);
+            *res++ = ' ';
+            beginSearch2 = word2.end;
+        }
+    }
+    *res = '\0';
+}
+
+
+
+void reverseString(char *str) {
+    if (*str == '\0')
+        return;
+    char *endBuffer = copy(str, getEndOfString(str), _stringBuffer);
+    WordDescriptor word;
+    while (getWordReverse(endBuffer - 1, _stringBuffer - 1, &word)) {
+        str = copy(word.begin,word.end,str);
+        *(str++) = ' ';
+        endBuffer = word.begin;
+    }
+    *(--str) = '\0';
+}
+
+void lexicographicallyOrderedWords() {
+
+
+}
 
 int main() {
-    test_digitToStartTransform_oneWord();
-    test_removeAdjacentEqualLetters();
+    char s[] = "Hi123";
+    char s1[] = "Hi123";
+    size_t w1Size = strlen_(s);
+    size_t w2Size = strlen_(s1);
+    WordDescriptor word1 = {s, s + w1Size};
+    WordDescriptor word2 = {s1, s1 + w2Size};
+    int result = WordsEqual(word1, word2);
+    printf("%d", result);
     return 0;
 }
